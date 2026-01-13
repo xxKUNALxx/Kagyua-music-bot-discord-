@@ -1,0 +1,58 @@
+{
+  "name": "kaguya-music-bot",
+  "version": "1.0.0",
+  "description": "A powerful Discord music bot that plays high-quality music from YouTube and Spotify with professional audio processing",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node test-bot.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "music",
+    "youtube",
+    "spotify",
+    "audio",
+    "streaming",
+    "ffmpeg",
+    "discord.js"
+  ],
+  "author": {
+    "name": "Kunal",
+    "url": "https://github.com/xxKUNALxx"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xxKUNALxx/Kagyua-music-bot-discord-.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xxKUNALxx/Kagyua-music-bot-discord-/issues"
+  },
+  "homepage": "https://github.com/xxKUNALxx/Kagyua-music-bot-discord-#readme",
+  "engines": {
+    "node": ">=16.9.0",
+    "npm": ">=7.0.0"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.10.0",
+    "@discordjs/voice": "^0.19.0",
+    "@snazzah/davey": "^0.1.9",
+    "discord.js": "^14.14.1",
+    "dotenv": "^17.2.3",
+    "ffmpeg-static": "^5.2.0",
+    "libsodium-wrappers": "^0.7.13",
+    "opusscript": "^0.0.8",
+    "play-dl": "^1.9.7",
+    "sodium-native": "^5.0.10",
+    "spotify-web-api-node": "^5.0.2",
+    "youtube-dl-exec": "^3.0.29",
+    "youtube-sr": "^4.3.11",
+    "yt-search": "^2.13.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
