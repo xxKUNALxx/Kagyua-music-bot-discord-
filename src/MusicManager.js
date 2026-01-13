@@ -2,16 +2,15 @@
  * Music Manager - Core Music Functionality
  * 
  * Handles music playback, queue management, and audio processing
- * using youtube-dl for extraction and FFmpeg for audio processing.
+ * using play-dl for reliable YouTube streaming on hosting platforms.
  * 
  * @author Kunal
  * @version 1.0.0
  */
 
 const { createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
-const youtubedl = require('youtube-dl-exec');
+const play = require('play-dl');
 const yts = require('yt-search');
-const { spawn } = require('child_process');
 
 class MusicManager {
     constructor() {
@@ -238,25 +237,6 @@ class MusicManager {
         return songs;
     }
 
-    async testVideoPlayability(url) {
-        try {
-            // Quick test to see if we can get video info
-            const info = await ytdl.getInfo(url);
-            
-            // Check if video is available
-            if (info.videoDetails.isLiveContent) return false;
-            if (info.videoDetails.isPrivate) return false;
-            
-            // Check for age restrictions or other blocks
-            const formats = ytdl.filterFormats(info.formats, 'audioonly');
-            return formats.length > 0;
-            
-        } catch (error) {
-            console.log(`❌ Video not playable: ${error.message}`);
-            return false;
-        }
-    }
-
     extractYouTubeId(url) {
         const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
         return match ? match[1] : null;
@@ -310,52 +290,15 @@ class MusicManager {
                 throw new Error('Invalid song URL');
             }
 
-            console.log('🎵 Creating audio stream with youtube-dl...');
+            console.log('🎵 Creating audio stream with play-dl...');
             
-            // Use youtube-dl-exec to get the actual stream URL
-            const info = await youtubedl(song.url, {
-                dumpSingleJson: true,
-                noCheckCertificates: true,
-                noWarnings: true,
-                preferFreeFormats: true,
-                addHeader: [
-                    'referer:youtube.com',
-                    'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                ]
+            // Use play-dl for reliable streaming (works on hosting platforms)
+            const stream = await play.stream(song.url, {
+                quality: 2 // High quality
             });
 
-            // Get the best audio format
-            const audioFormat = info.formats.find(format => 
-                format.acodec !== 'none' && format.vcodec === 'none'
-            ) || info.formats.find(format => format.acodec !== 'none');
-
-            if (!audioFormat) {
-                throw new Error('No audio format found');
-            }
-
-            console.log('🎵 Creating FFmpeg stream...');
-            
-            // Use full path to FFmpeg
-            const ffmpegPath = 'C:\\ffmpeg\\bin\\ffmpeg.exe';
-            
-            // Create FFmpeg process to stream the audio
-            const ffmpeg = spawn(ffmpegPath, [
-                '-reconnect', '1',
-                '-reconnect_streamed', '1',
-                '-reconnect_delay_max', '5',
-                '-i', audioFormat.url,
-                '-analyzeduration', '0',
-                '-loglevel', '0',
-                '-f', 's16le',
-                '-ar', '48000',
-                '-ac', '2',
-                'pipe:1'
-            ], {
-                stdio: ['pipe', 'pipe', 'pipe']
-            });
-
-            const resource = createAudioResource(ffmpeg.stdout, {
-                inputType: 'raw',
+            const resource = createAudioResource(stream.stream, {
+                inputType: stream.type,
                 inlineVolume: true
             });
 
@@ -374,7 +317,6 @@ class MusicManager {
 
             player.on(AudioPlayerStatus.Idle, () => {
                 console.log('Song finished, checking queue...');
-                ffmpeg.kill();
                 this.currentSongs.delete(guildId);
                 const currentQueue = this.getQueue(guildId);
                 if (currentQueue.length > 0) {
@@ -386,7 +328,6 @@ class MusicManager {
 
             player.on('error', (error) => {
                 console.error('Audio player error:', error);
-                ffmpeg.kill();
                 textChannel.send('❌ An error occurred while playing the song.');
                 
                 // Try next song in queue
@@ -394,11 +335,6 @@ class MusicManager {
                 if (currentQueue.length > 0) {
                     setTimeout(() => this.play(guildId, textChannel), 1000);
                 }
-            });
-
-            ffmpeg.on('error', (error) => {
-                console.error('FFmpeg error:', error);
-                textChannel.send('❌ Failed to process audio stream.');
             });
 
         } catch (error) {
